@@ -23,15 +23,13 @@ describe Visit do
     # let(:visit) {FactoryGirl.create(:visit, page: '/help_page/1', address: '126.318.035.038')}
     let (:visit) {Visit.new("/help_page/1 126.318.035.038")}
     context "Page is stored correctly" do
-      it "/help_page/1 126.318.035.038" do
-        expect(visit.page).to start_with '/he'
-        expect(visit.page).to end_with '/1'
+      it "Page name should be /help/page/1" do
+        expect(visit.page).to eq '/help_page/1'
       end
     end
     context "Address is stored correctly" do
-      it "/help_page/1 126.318.035.038" do
-        expect(visit.address).to start_with '126'
-        expect(visit.address).to end_with '038'
+      it "Address should be 126.318.035.038" do
+        expect(visit.address).to eq "126.318.035.038"
       end
     end
   end
@@ -42,6 +40,37 @@ describe "Sort and print test" do
     let(:visit) {{"j" => 5, "p" => 0, "o" => 2}}
     it "Sort and return hash" do
       expect(sort_and_print(visit)).to eq ({"j"=>5, "o"=>2, "p"=>0})
+    end
+  end
+end
+
+describe "Finding page visit information" do
+  context "finding page visits and counting visits to a page from the same address" do
+    let (:visit1) {Visit.new("/new_page_7 126.318.035.038")}
+    let (:visit2) {Visit.new("/new_page_7 126.318.035.038")}
+    it "Should count new page twice" do
+      expect(find_page_visits([visit1, visit2])["/new_page_7"]).to eq 2
+    end
+  end
+  context "finding page visits and counting visits from different addresses for the same page" do
+    let (:visit1) {Visit.new("/new_page_9 126.318.035.038")}
+    let (:visit2) {Visit.new("/new_page_9 126.308.043.829")}
+    it "should count new page 9 twice" do
+      expect(find_page_visits([visit1, visit2])["/new_page_9"]).to eq 2
+    end
+  end
+  context "finding unique page visits with 2 visits from the same address" do
+    let (:visit1) {Visit.new("/new_page_5 126.318.035.038")}
+    let (:visit2) {Visit.new("/new_page_5 126.318.035.038")}
+    it "Should only count new page 5 once because of the same IP" do
+      expect(find_unique_page_visits([visit1, visit2])["/new_page_5"]).to eq 1
+    end
+  end
+  context "finding unique page visits with 2 visits to the same page, but from different address" do
+    let (:visit1) {Visit.new("/new_page_15 126.318.035.038")}
+    let (:visit2) {Visit.new("/new_page_15 126.909.104.382")}
+    it "Should only count new page 5 once because of the same IP" do
+      expect(find_unique_page_visits([visit1, visit2])["/new_page_15"]).to eq 2
     end
   end
 end

@@ -12,11 +12,6 @@ class Visit
     @address = address
   end
 
-  # Count method that is able to count how many visit objects have been created
-  def self.count
-    return all.count
-  end
-
   # Method that returns an array of all created objects
   def self.all
     ObjectSpace.each_object(self).to_a
@@ -54,37 +49,45 @@ def sort_and_print(hash, type="visits")
   return new_hash
 end
 
-
-# This runs the read_file method to start the program, this is the equivalent to the main method in java
-visit_array = read_file(ARGV[0])
-
-begin
-  # Initialises the arrays and hashes that are used
+# Method that finds the number of page visits per page and returns them as a hash
+def find_page_visits(visits)
   visits_hash = Hash.new(0)
+  visits.each do |visit|
+    visits_hash[visit.page] += 1
+  end
+  # Returned the hash in case it would be required to be stored rather than just printed
+  return visits_hash
+end
+
+# Method that finds the number of unique visits per page, and returns them as a hash
+def find_unique_page_visits(visits)
   unique_visits_hash = Hash.new(0)
   unique_addresses_hash = Array.new
-
-  # This initialises each string in the visit_array as an instance of Visit
-  visits_string = visit_array.map{|visit| "visit#{visit_array.index(visit)} = Visit.new('#{visit.chomp}')"}.join(';')
-  eval(visits_string)
-
-  #This loops through all Visit instances and counts the number of visits on each page, as well as the number of unique visits
-  Visit.all.each do |visit|
-    visits_hash[visit.page] += 1
+  visits.each do |visit|
     # Each time a unique visit is detected, it adds the address and page to an array, so that it can be checked against for future checks
     if !unique_addresses_hash.include? [visit.page, visit.address]
       unique_addresses_hash.push [visit.page, visit.address]
       unique_visits_hash[visit.page] +=1
     end
   end
-  #Sorted hash stored in variable, and is printed to console
-  ordered_visits = sort_and_print(visits_hash)
-  puts
-  #Sorted hash stored in variable, and is printed to console
-  ordered_unique_visits = sort_and_print(unique_visits_hash, "unique visits")
-
-rescue NoMethodError => e
-  puts "This is likely due to the log file not being read. Check the filename, and that you've supplied the correct argument"
-  puts e.inspect
-  return false
+  # Returned the hash in case it would be required to be stored rather than just printed
+  return unique_visits_hash
 end
+
+# Method that takes the read-in visits and creates Visit objects with them
+def create_objects(visit_array)
+  begin
+    visits_string_for_eval = visit_array.map{|visit| "visit#{visit_array.index(visit)} = Visit.new('#{visit.chomp}')"}.join(';')
+    eval(visits_string_for_eval)
+  rescue NoMethodError => e
+    puts e.inspect
+  end
+end
+
+# This runs the read_file method to start the program, this is the equivalent to the main method in java
+visit_array = read_file(ARGV[0])
+create_objects(visit_array)
+visits_hash = find_page_visits(Visit.all)
+unique_visits_hash = find_unique_page_visits(Visit.all)
+sort_and_print(visits_hash)
+sort_and_print(unique_visits_hash, "unique visits")
